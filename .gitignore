@@ -1,0 +1,20 @@
+# Entornos virtuales
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Base de datos local
+db.sqlite3
+
+# Media local
+media/
+
+# Archivos del sistema
+.DS_Store
+
+# VS Code
+.vscode/
