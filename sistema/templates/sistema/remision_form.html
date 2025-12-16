@@ -1,0 +1,45 @@
+{% extends "sistema/base.html" %} {% block content %}
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h2 class="mb-3">➕ Nueva remisión</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Folio</label>
+          {{ form.folio }}
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Fecha</label>
+          {{ form.fecha }}
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Cliente</label>
+          {{ form.cliente }}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Imagen (foto/escaneo)</label>
+          {{ form.imagen }}
+        </div>
+
+        <div class="col-md-12">
+          <label class="form-label">Observaciones</label>
+          {{ form.observaciones }}
+        </div>
+      </div>
+
+      <div class="mt-4 d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Guardar</button>
+        <a class="btn btn-outline-secondary" href="/remisiones/">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

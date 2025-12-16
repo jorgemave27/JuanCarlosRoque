@@ -1,0 +1,57 @@
+{% extends "sistema/base.html" %} {% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Remisión: {{ remision.folio }}</h2>
+  <a class="btn btn-outline-secondary" href="/remisiones/">⬅️ Volver</a>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <p class="mb-1">
+      <strong>Cliente:</strong>
+      {{ remision.cliente.comercio }} ({{ remision.cliente.proveedor }})
+    </p>
+    <p class="mb-1"><strong>Fecha:</strong> {{ remision.fecha }}</p>
+
+    {% if remision.observaciones %}
+    <p class="mb-0">
+      <strong>Observaciones:</strong> {{ remision.observaciones }}
+    </p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ✅ BLOQUE: VENTA LIGADA A ESTA REMISIÓN -->
+<div class="card shadow-sm mb-3">
+  <div class="card-body d-flex gap-2 flex-wrap">
+    {% if remision.venta %}
+    <a class="btn btn-outline-primary" href="/ventas/{{ remision.venta.id }}/">
+      📄 Ver venta
+    </a>
+    <a class="btn btn-primary" href="/ventas/{{ remision.venta.id }}/editar/">
+      ✏️ Editar venta
+    </a>
+    {% else %}
+    <a class="btn btn-primary" href="/ventas/nueva/{{ remision.id }}/">
+      💰 Registrar venta
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h5 class="mb-3">Imagen</h5>
+    {% if remision.imagen %}
+    <img
+      src="{{ remision.imagen.url }}"
+      class="img-fluid rounded"
+      alt="Remisión"
+    />
+    {% else %}
+    <p class="mb-0">No hay imagen cargada.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'sistema/base.html' %} {% block content %}
+<div class="card shadow p-4 mb-4">
+  <h2 class="mb-3">Búsqueda Global</h2>
+
+  <form method="get" class="row g-2">
+    <div class="col-md-6">
+      <input
+        type="text"
+        name="q"
+        class="form-control"
+        placeholder="Buscar cliente o producto..."
+        value="{{ q }}"
+      />
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-primary w-100">Buscar</button>
+    </div>
+  </form>
+</div>
+
+<div class="card shadow p-4 mb-4">
+  <h3>Resultados de Productos</h3>
+  <div class="table-responsive mt-3">
+    <table class="table table-striped table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>Código</th>
+          <th>Descripción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in productos %}
+        <tr>
+          <td>{{ p.codigo }}</td>
+          <td>{{ p.descripcion }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="2">No se encontraron productos.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card shadow p-4">
+  <h3>Resultados de Clientes</h3>
+  <div class="table-responsive mt-3">
+    <table class="table table-striped table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>Proveedor</th>
+          <th>Comercio</th>
+          <th>Dirección</th>
+          <th>Contacto</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in clientes %}
+        <tr>
+          <td>{{ c.proveedor }}</td>
+          <td>{{ c.comercio }}</td>
+          <td>{{ c.direccion }}</td>
+          <td>{{ c.contacto }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4">No se encontraron clientes.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

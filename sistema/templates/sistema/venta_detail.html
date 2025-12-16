@@ -1,0 +1,68 @@
+{% extends "sistema/base.html" %} {% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">📄 Venta #{{ venta.id }}</h2>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="/ventas/">⬅️ Ventas</a>
+    <a class="btn btn-primary" href="/ventas/{{ venta.id }}/editar/"
+      >✏️ Editar</a
+    >
+  </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <p class="mb-1"><strong>Remisión:</strong> {{ venta.remision.folio }}</p>
+    <p class="mb-1">
+      <strong>Cliente:</strong> {{ venta.remision.cliente.comercio }}
+    </p>
+    <p class="mb-0"><strong>Fecha:</strong> {{ venta.fecha }}</p>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <h5 class="mb-3">Detalle</h5>
+
+    {% if detalles %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Unidad</th>
+            <th>Cantidad</th>
+            <th>Precio</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in detalles %}
+          <tr>
+            <td>{{ d.producto.codigo }} - {{ d.producto.descripcion }}</td>
+            <td>{{ d.get_unidad_display }}</td>
+            <td>{{ d.cantidad }}</td>
+            <td>${{ d.precio_unitario }}</td>
+            <td>${{ d.subtotal }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="mb-0">No hay líneas capturadas.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <p class="mb-1"><strong>Subtotal:</strong> ${{ venta.subtotal }}</p>
+    <p class="mb-1"><strong>Descuento:</strong> ${{ venta.descuento }}</p>
+    <p class="mb-1"><strong>IVA:</strong> ${{ venta.iva }}</p>
+    <hr />
+    <p class="mb-0 fs-5"><strong>Total:</strong> ${{ venta.total }}</p>
+  </div>
+</div>
+
+{% endblock %}

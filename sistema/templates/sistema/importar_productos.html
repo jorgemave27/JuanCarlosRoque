@@ -1,0 +1,16 @@
+{% extends 'sistema/base.html' %} {% block content %}
+<div class="card shadow p-4">
+  <h2 class="mb-3">Importar Productos</h2>
+
+  <form method="post" enctype="multipart/form-data" class="mt-3">
+    {% csrf_token %}
+
+    <div class="mb-3">
+      <label class="form-label">Seleccionar archivo Excel:</label>
+      <input type="file" name="excel_file" class="form-control" required />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Importar</button>
+  </form>
+</div>
+{% endblock %}

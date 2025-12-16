@@ -1,0 +1,92 @@
+{% extends "sistema/base.html" %} {% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">✏️ Editar venta #{{ venta.id }}</h2>
+  <a class="btn btn-outline-secondary" href="/ventas/{{ venta.id }}/"
+    >⬅️ Ver venta</a
+  >
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <p class="mb-1"><strong>Remisión:</strong> {{ venta.remision.folio }}</p>
+    <p class="mb-0">
+      <strong>Cliente:</strong> {{ venta.remision.cliente.comercio }}
+    </p>
+  </div>
+</div>
+
+<form method="POST">
+  {% csrf_token %}
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h5 class="mb-3">Datos generales</h5>
+
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Fecha</label>
+          {{ form.fecha }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Descuento</label>
+          {{ form.descuento }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">IVA</label>
+          {{ form.iva }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="mb-3">Detalle por producto</h5>
+
+      {{ formset.management_form }}
+
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Unidad</th>
+              <th>Cantidad</th>
+              <th>Precio Unitario</th>
+              <th>Eliminar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in formset %}
+            <tr>
+              <td>{{ f.producto }}</td>
+              <td>{{ f.unidad }}</td>
+              <td>{{ f.cantidad }}</td>
+              <td>{{ f.precio_unitario }}</td>
+              <td class="text-center">
+                {% if f.instance.pk %} {{ f.DELETE }} {% endif %}
+              </td>
+            </tr>
+            {% if f.errors %}
+            <tr>
+              <td colspan="5">
+                <div class="alert alert-danger mb-0">{{ f.errors }}</div>
+              </td>
+            </tr>
+            {% endif %} {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-primary" type="submit">💾 Guardar</button>
+        <a class="btn btn-outline-secondary" href="/ventas/{{ venta.id }}/"
+          >Cancelar</a
+        >
+      </div>
+    </div>
+  </div>
+</form>
+
+{% endblock %}

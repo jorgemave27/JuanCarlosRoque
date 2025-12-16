@@ -1,0 +1,47 @@
+{% extends "sistema/base.html" %} {% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">🧾 Remisiones</h2>
+  <a class="btn btn-primary" href="/remisiones/nueva/">➕ Nueva remisión</a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    {% if remisiones %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Folio</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th>Imagen</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in remisiones %}
+          <tr>
+            <td><strong>{{ r.folio }}</strong></td>
+            <td>{{ r.cliente.comercio }} ({{ r.cliente.proveedor }})</td>
+            <td>{{ r.fecha }}</td>
+            <td>{% if r.imagen %} ✅ {% else %} — {% endif %}</td>
+            <td class="text-end">
+              <a
+                class="btn btn-sm btn-outline-secondary"
+                href="/remisiones/{{ r.id }}/"
+                >Ver</a
+              >
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="mb-0">Aún no hay remisiones registradas.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

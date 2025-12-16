@@ -1,0 +1,32 @@
+{% extends 'sistema/base.html' %} {% block content %}
+<div class="card shadow p-4">
+  <h2 class="mb-3">Listado de Productos</h2>
+
+  <div class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>Código</th>
+          <th>Descripción</th>
+          <th>Compra CJS</th>
+          <th>Compra PZS</th>
+          <th>Venta CJS</th>
+          <th>Venta PZS</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in productos %}
+        <tr>
+          <td>{{ p.codigo }}</td>
+          <td>{{ p.descripcion }}</td>
+          <td>{{ p.compra_cjs }}</td>
+          <td>{{ p.compra_pzs }}</td>
+          <td>{{ p.venta_cjs }}</td>
+          <td>{{ p.venta_pzs }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

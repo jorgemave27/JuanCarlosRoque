@@ -1,0 +1,53 @@
+{% extends "sistema/base.html" %} {% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">💰 Ventas</h2>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    {% if ventas %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Remisión</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in ventas %}
+          <tr>
+            <td><strong>{{ v.id }}</strong></td>
+            <td>{{ v.remision.folio }}</td>
+            <td>{{ v.remision.cliente.comercio }}</td>
+            <td>{{ v.fecha }}</td>
+            <td>${{ v.total }}</td>
+            <td class="text-end">
+              <a
+                class="btn btn-sm btn-outline-secondary"
+                href="/ventas/{{ v.id }}/"
+                >Ver</a
+              >
+              <a
+                class="btn btn-sm btn-primary"
+                href="/ventas/{{ v.id }}/editar/"
+                >Editar</a
+              >
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="mb-0">Aún no hay ventas registradas.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
