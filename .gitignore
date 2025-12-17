@@ -1,21 +1,54 @@
+# =========================
 # Entornos virtuales
+# =========================
 .venv/
 venv/
+env/
 
+# =========================
 # Python
+# =========================
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+*.log
 
-# Base de datos local
+# =========================
+# Django
+# =========================
 db.sqlite3
-
-# Media local
+db.sqlite3-journal
 media/
+staticfiles/
 
-# Archivos del sistema
-.DS_Store
+# Migraciones compiladas (opcional, yo NO las ignoro)
+# */migrations/*.py
+# !*/migrations/__init__.py
 
-# VS Code
+# =========================
+# Variables de entorno
+# =========================
+.env
+.env.*
+.env.local
+
+# =========================
+# Render / Deploy
+# =========================
+*.pem
+*.key
+
+# =========================
+# VS Code / SO
+# =========================
 .vscode/
+.DS_Store
+Thumbs.db
 
+# =========================
+# Archivos temporales
+# =========================
+*.tmp
+*.swp
+*.bak
