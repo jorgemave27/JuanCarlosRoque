@@ -1,13 +1,19 @@
+import logging
+import re
+from datetime import date
 from decimal import Decimal
-
-from django.db.models import Q
-from django.http import HttpResponse
-from django.shortcuts import render, redirect, get_object_or_404
 
 from openpyxl import load_workbook
 
-from .models import Cliente, Producto, Remision, Venta
-from .forms import RemisionForm
+from django.contrib import messages
+from django.db import transaction
+from django.db.models import Q, Prefetch
+from django.shortcuts import render, redirect, get_object_or_404
+
+from .models import Cliente, Producto, Remision, Venta, DetalleVenta
+from .forms import RemisionForm, VentaForm, DetalleVentaFormSet
+
+logger = logging.getLogger(__name__)
 
 
 # -----------------------------
@@ -18,64 +24,83 @@ def home(request):
 
 
 # -----------------------------
+# HELPERS
+# -----------------------------
+def safe_decimal(val) -> Decimal:
+    """Convierte valores de Excel a Decimal sin reventar."""
+    if val is None:
+        return Decimal("0")
+    val = str(val).strip()
+    if val == "" or val == "-" or val.lower() == "na":
+        return Decimal("0")
+    val = val.replace(",", "")
+    try:
+        return Decimal(val)
+    except Exception:
+        return Decimal("0")
+
+
+# -----------------------------
 # IMPORTAR PRODUCTOS
 # -----------------------------
 def importar_productos(request):
     if request.method == "POST":
-        archivo = request.FILES["excel_file"]
+        try:
+            archivo = request.FILES.get("excel_file")
+            if not archivo:
+                messages.error(request, "No se recibió ningún archivo. Revisa que el input se llame excel_file.")
+                return redirect("importar_productos")
 
-        wb = load_workbook(archivo, data_only=True)
-        ws = wb.active
+            wb = load_workbook(archivo, data_only=True)
+            ws = wb.active
 
-        primera_fila = True
-        segunda_fila = True
+            primera_fila = True
+            segunda_fila = True
 
-        def safe_decimal(val):
-            if val is None:
-                return Decimal("0")
-            val = str(val).strip()
-            if val == "" or val == "-" or val.lower() == "na":
-                return Decimal("0")
-            val = val.replace(",", "")
-            try:
-                return Decimal(val)
-            except Exception:
-                return Decimal("0")
+            with transaction.atomic():
+                for row in ws.iter_rows(values_only=True):
+                    if primera_fila:
+                        primera_fila = False
+                        continue
+                    if segunda_fila:
+                        segunda_fila = False
+                        continue
 
-        for row in ws.iter_rows(values_only=True):
-            if primera_fila:
-                primera_fila = False
-                continue
+                    if not row or all(col is None for col in row):
+                        continue
 
-            if segunda_fila:
-                segunda_fila = False
-                continue
+                    # Evita IndexError si faltan columnas
+                    if len(row) < 7:
+                        continue
 
-            if row is None or all(col is None for col in row):
-                continue
+                    codigo = row[1]
+                    descripcion = row[2]
+                    compra_cjs = safe_decimal(row[3])
+                    compra_pzs = safe_decimal(row[4])
+                    venta_cjs = safe_decimal(row[5])
+                    venta_pzs = safe_decimal(row[6])
 
-            codigo = row[1]
-            descripcion = row[2]
-            compra_cjs = safe_decimal(row[3])
-            compra_pzs = safe_decimal(row[4])
-            venta_cjs = safe_decimal(row[5])
-            venta_pzs = safe_decimal(row[6])
+                    if not codigo:
+                        continue
 
-            if not codigo:
-                continue
+                    Producto.objects.update_or_create(
+                        codigo=str(codigo).strip(),
+                        defaults={
+                            "descripcion": (descripcion or ""),
+                            "compra_cjs": compra_cjs,
+                            "compra_pzs": compra_pzs,
+                            "venta_cjs": venta_cjs,
+                            "venta_pzs": venta_pzs,
+                        }
+                    )
 
-            Producto.objects.update_or_create(
-                codigo=str(codigo).strip(),
-                defaults={
-                    "descripcion": descripcion or "",
-                    "compra_cjs": compra_cjs,
-                    "compra_pzs": compra_pzs,
-                    "venta_cjs": venta_cjs,
-                    "venta_pzs": venta_pzs,
-                }
-            )
+            messages.success(request, "Productos importados correctamente.")
+            return redirect("lista_productos")
 
-        return redirect("lista_productos")
+        except Exception:
+            logger.exception("ERROR EN IMPORTAR PRODUCTOS")
+            messages.error(request, "Ocurrió un error al importar. Revisa los logs en Render.")
+            return redirect("importar_productos")
 
     return render(request, "sistema/importar_productos.html")
 
@@ -85,7 +110,10 @@ def importar_productos(request):
 # -----------------------------
 def importar_clientes(request):
     if request.method == "POST":
-        archivo = request.FILES["excel_file"]
+        archivo = request.FILES.get("excel_file")
+        if not archivo:
+            messages.error(request, "No se recibió ningún archivo.")
+            return redirect("importar_clientes")
 
         wb = load_workbook(archivo, data_only=True)
         ws = wb.active
@@ -97,7 +125,6 @@ def importar_clientes(request):
             if primera_fila:
                 primera_fila = False
                 continue
-
             if segunda_fila:
                 segunda_fila = False
                 continue
@@ -137,6 +164,7 @@ def importar_clientes(request):
                 }
             )
 
+        messages.success(request, "Clientes importados correctamente.")
         return redirect("lista_clientes")
 
     return render(request, "sistema/importar_clientes.html")
@@ -146,12 +174,12 @@ def importar_clientes(request):
 # LISTADOS
 # -----------------------------
 def lista_productos(request):
-    productos = Producto.objects.all()
+    productos = Producto.objects.all().order_by("codigo")
     return render(request, "sistema/lista_productos.html", {"productos": productos})
 
 
 def lista_clientes(request):
-    clientes = Cliente.objects.all()
+    clientes = Cliente.objects.all().order_by("comercio")
     return render(request, "sistema/lista_clientes.html", {"clientes": clientes})
 
 
@@ -184,7 +212,7 @@ def busqueda_global(request):
 
 
 # -----------------------------
-# REMISIONES (YA CON TEMPLATES + UPLOAD)
+# REMISIONES
 # -----------------------------
 def remision_list(request):
     remisiones = Remision.objects.select_related("cliente").order_by("-fecha", "-id")
@@ -196,7 +224,6 @@ def remision_create(request):
         form = RemisionForm(request.POST, request.FILES)
         if form.is_valid():
             remision = form.save()
-            # usando namespace "sistema" porque tu urls.py tiene app_name="sistema"
             return redirect("sistema:remision_detail", pk=remision.pk)
     else:
         form = RemisionForm()
@@ -210,11 +237,8 @@ def remision_detail(request, pk):
 
 
 # -----------------------------
-# VENTAS (por ahora stub)
+# VENTAS CRUD (crear desde remisión + editar)
 # -----------------------------
-from django.db import transaction
-from .forms import VentaForm, DetalleVentaFormSet
-
 def venta_list(request):
     ventas = Venta.objects.select_related("remision", "remision__cliente").order_by("-fecha", "-id")
     return render(request, "sistema/ventas_list.html", {"ventas": ventas})
@@ -224,11 +248,9 @@ def venta_list(request):
 def venta_create_from_remision(request, remision_id):
     remision = get_object_or_404(Remision.objects.select_related("cliente"), pk=remision_id)
 
-    # Si ya existe venta, mándalo a editar
     if hasattr(remision, "venta"):
         return redirect("sistema:venta_edit", pk=remision.venta.pk)
 
-    # Creamos venta base ligada a remisión
     venta = Venta.objects.create(
         remision=remision,
         fecha=remision.fecha,
@@ -263,10 +285,8 @@ def venta_edit(request, pk):
         if form.is_valid() and formset.is_valid():
             form.save()
             formset.save()
-
-            # Recalcula totales con base en detalles (y descuento/iva)
             venta.recalcular_totales(commit=True)
-
+            messages.success(request, "Venta actualizada correctamente.")
             return redirect("sistema:venta_detail", pk=venta.pk)
     else:
         form = VentaForm(instance=venta)
@@ -279,10 +299,9 @@ def venta_edit(request, pk):
     })
 
 
-import re
-from datetime import date
-from django.contrib import messages
-
+# -----------------------------
+# IMPORTAR REMISIONES DESDE EXCEL (tu lógica)
+# -----------------------------
 def importar_remisiones_excel(request):
     if request.method == "POST":
         archivo = request.FILES.get("excel_file")
@@ -291,7 +310,6 @@ def importar_remisiones_excel(request):
 
         wb = load_workbook(archivo, data_only=True)
 
-        # Debe existir esta hoja
         sheet_name = "REL REM ENTREG1"
         if sheet_name not in wb.sheetnames:
             return render(request, "sistema/importar_remisiones.html", {
@@ -300,9 +318,8 @@ def importar_remisiones_excel(request):
 
         ws = wb[sheet_name]
 
-        # En tu archivo, los headers de fechas están en la fila 5
         header_row = 5
-        date_map = {}  # col_index -> fecha real
+        date_map = {}
 
         mon_map = {
             "Ene": 1, "Feb": 2, "Mar": 3, "Abr": 4, "May": 5, "Jun": 6,
@@ -311,7 +328,6 @@ def importar_remisiones_excel(request):
             "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12,
         }
 
-        # Construir mapa de columnas a fechas (ej: "LUN  03/Nov/25")
         for col in range(1, ws.max_column + 1):
             val = ws.cell(row=header_row, column=col).value
             if isinstance(val, str):
@@ -332,9 +348,8 @@ def importar_remisiones_excel(request):
         ya_existian = 0
         ventas_creadas = 0
 
-        # Los clientes empiezan aprox en fila 6
         for row in range(6, ws.max_row + 1):
-            clave_cte = ws.cell(row=row, column=3).value   # ej: PRO0002
+            clave_cte = ws.cell(row=row, column=3).value
             comercio = ws.cell(row=row, column=4).value
             contacto = ws.cell(row=row, column=5).value
 
@@ -345,7 +360,6 @@ def importar_remisiones_excel(request):
             comercio = str(comercio).strip() if comercio else ""
             contacto = str(contacto).strip() if contacto else ""
 
-            # Asegurar cliente (tu import anterior usa proveedor como llave)
             cliente, _ = Cliente.objects.get_or_create(
                 proveedor=clave_cte,
                 defaults={
@@ -358,15 +372,12 @@ def importar_remisiones_excel(request):
                 }
             )
 
-            # Recorrer columnas con fechas y crear remisiones cuando haya valor
             for col, fecha in date_map.items():
                 cell_val = ws.cell(row=row, column=col).value
                 if not cell_val:
                     continue
 
-                # Espera valores tipo: "Remision K-0070"
                 if isinstance(cell_val, str) and "remision" in cell_val.lower():
-                    # Extrae folio: toma lo que venga después de "Remision"
                     folio = cell_val.replace("Remision", "").replace("remision", "").strip()
                     if not folio:
                         continue
@@ -383,7 +394,6 @@ def importar_remisiones_excel(request):
                     if created:
                         creadas += 1
 
-                        # OPCIONAL: crear venta vacía para que ya quede lista a editar
                         if not hasattr(remision, "venta"):
                             Venta.objects.create(
                                 remision=remision,
@@ -405,3 +415,38 @@ def importar_remisiones_excel(request):
         })
 
     return render(request, "sistema/importar_remisiones.html")
+
+
+# -----------------------------
+# VENTAS (FILTRO POR CLIENTE Y PRODUCTO)
+# -----------------------------
+def ventas_lista(request):
+    cliente_id = request.GET.get("cliente")
+    producto_id = request.GET.get("producto")
+
+    qs = (
+        Venta.objects
+        .select_related("remision", "remision__cliente")
+        .prefetch_related(
+            Prefetch(
+                "detalles",
+                queryset=DetalleVenta.objects.select_related("producto").order_by("id")
+            )
+        )
+        .order_by("-fecha", "-id")
+    )
+
+    if cliente_id:
+        qs = qs.filter(remision__cliente_id=cliente_id)
+
+    if producto_id:
+        qs = qs.filter(detalles__producto_id=producto_id).distinct()
+
+    context = {
+        "ventas": qs[:500],
+        "clientes": Cliente.objects.order_by("comercio"),
+        "productos": Producto.objects.order_by("codigo"),
+        "cliente_sel": cliente_id or "",
+        "producto_sel": producto_id or "",
+    }
+    return render(request, "sistema/ventas_lista.html", context)

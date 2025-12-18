@@ -1,0 +1,82 @@
+{% extends "sistema/base.html" %}
+
+{% block content %}
+<h2 class="mb-3">📊 Ventas (Filtro)</h2>
+
+<form method="get" class="row g-2 align-items-end mb-3">
+  <div class="col-md-5">
+    <label class="form-label">Cliente</label>
+    <select name="cliente" class="form-select">
+      <option value="">-- Todos --</option>
+      {% for c in clientes %}
+        <option value="{{ c.id }}" {% if cliente_sel == c.id|stringformat:"s" %}selected{% endif %}>
+          {{ c.comercio }} ({{ c.proveedor }})
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-5">
+    <label class="form-label">Producto</label>
+    <select name="producto" class="form-select">
+      <option value="">-- Todos --</option>
+      {% for p in productos %}
+        <option value="{{ p.id }}" {% if producto_sel == p.id|stringformat:"s" %}selected{% endif %}>
+          {{ p.codigo }} - {{ p.descripcion }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-2 d-grid">
+    <button class="btn btn-primary" type="submit">Buscar</button>
+    <a class="btn btn-link" href="{% url 'sistema:ventas_lista' %}">Limpiar</a>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm table-striped align-middle">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Folio</th>
+            <th>Cliente</th>
+            <th class="text-end">Subtotal</th>
+            <th class="text-end">Total</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in ventas %}
+            <tr>
+              <td>{{ v.fecha }}</td>
+              <td>{{ v.remision.folio }}</td>
+              <td>{{ v.remision.cliente }}</td>
+              <td class="text-end">{{ v.subtotal }}</td>
+              <td class="text-end">{{ v.total }}</td>
+              <td>
+                <ul class="mb-0">
+                  {% for d in v.detalles.all %}
+                    <li>
+                      {{ d.producto.codigo }} - {{ d.producto.descripcion }}
+                      | {{ d.cantidad }} {{ d.get_unidad_display }}
+                      | ${{ d.precio_unitario }}
+                      | ${{ d.subtotal }}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6">Sin resultados</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
