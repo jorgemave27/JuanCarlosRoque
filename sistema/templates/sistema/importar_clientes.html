@@ -1,10 +1,18 @@
-{% extends 'sistema/base.html' %} {% block content %}
-<h2>Importar Clientes desde Excel</h2>
+{% extends "sistema/base.html" %} {% block content %}
+<h2 class="mb-3">⬆️ Importar Clientes desde Excel</h2>
 
-<form method="post" enctype="multipart/form-data">
-  {% csrf_token %}
-  <input type="file" name="excel_file" required />
-  <br /><br />
-  <button class="btn" type="submit">Importar</button>
-</form>
+<div class="card">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label">Archivo Excel</label>
+        <input type="file" name="excel_file" class="form-control" required />
+      </div>
+
+      <button class="btn btn-primary" type="submit">Importar</button>
+    </form>
+  </div>
+</div>
 {% endblock %}
